@@ -1,21 +1,31 @@
-setwd('C:/Users/82105/OneDrive/바탕 화면/pose_estimation')
+setwd('set working directory HERE')
 rm(list = ls())
 
 library(magick)
 library(image.libfacedetection)
 
-dir = './'
+dir = '/'
 pic_list <- grep(".png",list.files(path=dir), value = T)
 pic_list <- pic_list[order(pic_list)]
 anal_dt <- data.frame()
-
+list.files(pattern = ".png")
 for(p in c(1:length(pic_list))){
-  image0 <- image_read(pic_list[p])
-  image<-image_crop(image0,geometry_area(400,300,150,100))
+  image <- image_convert(image, "png")
+  image <- image_background(image, "white")
+  image <- image_crop(image0,geometry_area(400,300,150,100))
   faces <- image_detect_faces(image)
+  print(paste("Image:", pic_list[p]))
+  print(faces)
   temp <- data.frame(faces$detections)
   temp_dt <- temp[temp$confidence>=50,]
-  
+  if (length(faces$detections) == 0) {
+    print("No face detected")
+  } else {
+    temp <- data.frame(faces$detections)
+    print(temp)  # check confidence values
+    temp_dt <- temp[temp$confidence >= 50, ]
+    print(temp_dt)
+  }
   if(nrow(temp_dt)==0){
     anal_dt <- rbind(anal_dt, temp_dt)
   }else{
@@ -26,7 +36,9 @@ for(p in c(1:length(pic_list))){
   }
   
 }
-
+print(length(pic_list))         # How many PNGs
+print(nrow(anal_dt))            # How many face detections
+print(anal_dt$confidence)       # Are confidence scores >= 50?
 if(nrow(anal_dt)<=1){
   print(11)
   result <- 11
@@ -56,8 +68,9 @@ if(nrow(anal_dt)<=1){
   abs_loc_x_diff <- abs(loc_x_diff)
   abs_loc_y_diff <- abs(loc_y_diff)
   
-  
-  #정상:1, 정향형:2, 후향형:3, 좌형:4, 좌향형:5, 좌후형:6, 우형:7, 우향형:8, 우후형:9, 운동불가:10, 판단불가:11(앉은상태, 사진이 한장 혹은 없는 경우)
+  # Normal: 1, Forward type: 2, Backward type: 3, Left type: 4, Left-forward type: 5, Left-backward type: 6,
+  # Right type: 7, Right-forward type: 8, Right-backward type: 9, Unable to move: 10, Cannot determine: 11
+  # (sitting posture, or if there's only one photo or none)
   result <- if(abs_loc_x_diff<=5 & abs_loc_y_diff<=5){
     1
   }else if(abs_loc_x_diff<=5 & loc_y_diff> 5){
