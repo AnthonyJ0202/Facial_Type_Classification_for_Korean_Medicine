@@ -5,7 +5,7 @@ The goal is to identify patterns in movements variation among subjects.
 
 ## How to Run
 1. Install packages "Magick" and ""image.libfacedetection_0.1.tar.gz", repos=NULL, type="source"
-2. Prepare two or more portraits of same person with clear lighting with high resolution.  
+2. Prepare two or more portraits of same person with clear lighting with high resolution and plain white background.  
 3. Set working directory to the image file
 4. Run
 
