@@ -1,4 +1,4 @@
-# Body Shape Recognition using R
+# Body posture Recognition using R
 
 This R script analyzes a set of `.png` images using facial detection and classifies the subject's orientation or movement across images.
 The goal is to identify patterns in movements variation among subjects.
