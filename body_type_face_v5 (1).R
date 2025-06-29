@@ -1,98 +1,98 @@
-setwd('set working directory HERE')
-rm(list = ls())
 
+###load model###
+library(devtools)
+library(opencv)
+library(psych)
+library(MASS)
+library(sampling)
+library(dplyr)
 library(magick)
 library(image.libfacedetection)
+library(xgboost)
 
-dir = '/'
-pic_list <- grep(".png",list.files(path=dir), value = T)
-pic_list <- pic_list[order(pic_list)]
-anal_dt <- data.frame()
-list.files(pattern = ".png")
-for(p in c(1:length(pic_list))){
-  image <- image_convert(image, "png")
-  image <- image_background(image, "white")
-  image <- image_crop(image0,geometry_area(400,300,150,100))
-  faces <- image_detect_faces(image)
-  print(paste("Image:", pic_list[p]))
-  print(faces)
-  temp <- data.frame(faces$detections)
-  temp_dt <- temp[temp$confidence>=50,]
-  if (length(faces$detections) == 0) {
-    print("No face detected")
-  } else {
-    temp <- data.frame(faces$detections)
-    print(temp)  # check confidence values
-    temp_dt <- temp[temp$confidence >= 50, ]
-    print(temp_dt)
-  }
-  if(nrow(temp_dt)==0){
-    anal_dt <- rbind(anal_dt, temp_dt)
-  }else{
-    temp_dt <- temp_dt[1,]
-    pic_dt <- data.frame(pic_num = pic_list[p])
-    temp_dt <- cbind(temp_dt,pic_dt)
-    anal_dt <- rbind(anal_dt, temp_dt)
-  }
+##START HERE
+######sample code
+#################################
+viewer <- getOption("viewer")
+which_sex<-c("남자")
+name<- "sample"
+CamDir <- "DIRECTORY" # Set directory for your image
+
+# Live face detection:
+# ocv_video(ocv_face): Use this code to comfirm opencv has access to your built in camera
+test <- ocv_picture()
+print(test)
+bitmap <- ocv_bitmap(test)
+live_face <- image_read(bitmap)
+image_write(live_face, path = paste0(CamDir,name,".jpg"), format = "jpg")
+
+
+face_label<- c("정과","기과","신과","혈과")
+Camlist <- grep("sample.jpg",list.files(CamDir), value = TRUE)
+cam <- 1
+
+################################
+### face detect sample image ###
+cam_face<-image_read(paste0(CamDir,Camlist[cam]))
+cam_detect <- image_detect_faces(cam_face)
+plot(cam_detect, cam_face, border = "red", lwd = 7, col = "white")
+image_write(plot(cam_detect, cam_face, border = "red", lwd = 7, col = "white"), path = paste0(CamDir,name,"face_detect.jpg"), format = "jpg")
+viewer(paste0(CamDir,name,"face_detect.jpg"))
+################################
+
+face_result<- c()
+my_face<-c()
+for (cam in 1:length(Camlist)){
   
-}
-print(length(pic_list))         # How many PNGs
-print(nrow(anal_dt))            # How many face detections
-print(anal_dt$confidence)       # Are confidence scores >= 50?
-if(nrow(anal_dt)<=1){
-  print(11)
-  result <- 11
-}else{
+  cam_face<-image_read(paste0(CamDir,Camlist[cam]))
+  cam_detect <- image_detect_faces(cam_face)
+  cam_tmp1<- cam_detect[[2]]
+  cam_tmp1<- cam_tmp1[which.max(cam_tmp1$confidence),]
+  cam_tmp1$ratio_hw<-cam_tmp1$height/cam_tmp1$width
+  cam_tmp1$d<-sqrt(((cam_tmp1$width)/2)^2+((cam_tmp1$height)/2)^2)
+  cam_tmp1$r<-(cam_tmp1$height)/2
+  cam_tmp1$ratio_dr<-cam_tmp1$d/cam_tmp1$r
+  cam_tmp1$id<- Camlist[cam]
   
-  before <- anal_dt[1,]
-  after <- anal_dt[nrow(anal_dt),]
-  loc_before<-c(mean(as.numeric(before[,c(6,8,10,12,14)]))
-                ,mean(as.numeric(before[,c(7,9,11,13,15)])))
+  #estimate face area
+  cam_ori<- ocv_read(paste0(CamDir,Camlist[cam]))
+  cammask <- ocv_facemask(cam_ori)
+  face_radius <- as.numeric(unlist(attr(cammask, 'faces')[1,1]))
   
-  loc_after<-c(mean(as.numeric(after[,c(6,8,10,12,14)]))
-               ,mean(as.numeric(after[,c(7,9,11,13,15)])))
+  cam_tmp1$face_origin<- (3.14)*(face_radius)^2
   
-  if(loc_before[1]>loc_after[1]){
-    loc_x_diff <- ceiling(loc_after[1]-loc_before[1])
-    
-  }else{
-    loc_x_diff <- floor(loc_after[1]-loc_before[1])
-  }
+  cam_tmp1$face_rect <- cam_tmp1$width*(cam_tmp1$height)
+  cam_tmp1$face_trep <- (((cam_tmp1$width)+(cam_tmp1$width*0.3))*(cam_tmp1$height))/2
+  cam_tmp1$face_circle <- (3.14)*(cam_tmp1$height/2)^2
+  cam_tmp1$face_ellipse <- (3.14)*(cam_tmp1$width/2)*(cam_tmp1$height/2)
   
-  if(loc_before[2]>loc_after[2]){
-    loc_y_diff<-ceiling(loc_after[2]-loc_before[2])
-  }else{
-    loc_y_diff <- floor(loc_after[2]-loc_before[2])
-  }
+  cam_tmp1$ratio_or <- cam_tmp1$face_rect/cam_tmp1$face_origin
+  cam_tmp1$ratio_ot <- cam_tmp1$face_trep/cam_tmp1$face_origin
+  cam_tmp1$ratio_oc <- cam_tmp1$face_circle/cam_tmp1$face_origin
+  cam_tmp1$ratio_oe <- cam_tmp1$face_ellipse/cam_tmp1$face_origin
+  cam_tmp1$sex<- which_sex[cam]
   
-  abs_loc_x_diff <- abs(loc_x_diff)
-  abs_loc_y_diff <- abs(loc_y_diff)
+  cam_te_dt <- cam_tmp1[,c("ratio_hw","ratio_dr"
+                           ,"ratio_or","ratio_ot","ratio_oc","ratio_oe","sex")]
+  cam_te_dt$sex <- ifelse(cam_te_dt$sex=="남자",0,1)
   
-  # Normal: 1, Forward type: 2, Backward type: 3, Left type: 4, Left-forward type: 5, Left-backward type: 6,
-  # Right type: 7, Right-forward type: 8, Right-backward type: 9, Unable to move: 10, Cannot determine: 11
-  # (sitting posture, or if there's only one photo or none)
-  result <- if(abs_loc_x_diff<=5 & abs_loc_y_diff<=5){
-    1
-  }else if(abs_loc_x_diff<=5 & loc_y_diff> 5){
-    2
-  }else if(abs_loc_x_diff<=5 & loc_y_diff< (-5)){
-    3
-  }else if(loc_x_diff>5 & abs_loc_y_diff<=5){
-    4
-  }else if(loc_x_diff>5 & loc_y_diff>5){
-    5
-  }else if(loc_x_diff>5 & loc_y_diff< -5){
-    6
-  }else if(loc_x_diff<-5 & abs_loc_y_diff<=5){
-    7
-  }else if(loc_x_diff<-5 & loc_y_diff>5){
-    8
-  }else if(loc_x_diff<-5 & loc_y_diff< -5){
-    9
-  }else{11}
+  
+  p <- predict(fit4, newdata = as.matrix(cam_te_dt)) # calculate prediction
+  
+  
+  face_result_tmp <- data.frame(
+    # id=Camlist[cam]
+    label=face_label
+    ,Probability=p)
+  
+  my_face_tmp <- face_result_tmp[which.max(face_result_tmp$Probability),]
+  
+  face_result <- rbind(face_result, face_result_tmp)
+  my_face <- rbind(my_face, my_face_tmp)
   
 }
 
-cat(result, file = "result.txt")
+face_result<- face_result[order(face_result$Probability, decreasing=T), ]
+write.table(face_result, "//Users//seoinjeong//Desktop//face_result.txt")
 
 
