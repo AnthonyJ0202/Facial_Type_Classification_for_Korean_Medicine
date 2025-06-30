@@ -1,23 +1,12 @@
 # Body Posture Recognition using R
+This program uses Random Forest classification model of YuFaceDetectNet for landmark detection. 
+The goal is to identify facial structure types using the metrics of the traditional Korean Medicine "정기신혈"(精氣神血), which are used as diagnostic tests. 
 
-This R script analyzes a set of `.png` images using facial detection and classifies the subject's orientation or movement across images.
-The goal is to identify patterns in movements variation among subjects.
+## Prerequisites
+- The following devices with built in camera are compatible: Windows, Linux, Android and Mac OS
 
-## How to Run
-1. Install packages "Magick" and ""image.libfacedetection_0.1.tar.gz", repos=NULL, type="source"
-2. Prepare two or more portraits of same person with clear lighting with high resolution and plain white background.  
-3. Set working directory to the image file
-4. Run
-
-Based on how the detected face moves, the script assigns one of the following categories
-1 Normal
-2 Forward type
-3 Backward type
-4 Left type
-5 Left-forward type
-6 Left-backward type
-7 Right type
-8 Right-forward type
-9 Right-backward type
-10 Unable to move
-11 Cannot determine
+Based on how the detected face, the script assigns the following categories in percentages
+"정과" - round face
+"기과" - rectabangular face
+"신과" - triangular face
+"혈과" - oval face
