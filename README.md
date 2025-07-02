@@ -1,4 +1,5 @@
-# Body Posture Recognition using R
+# Facial Type Classisifcation
+using R
 This program uses Random Forest classification model of YuFaceDetectNet for landmark detection. 
 The goal is to identify facial structure types using the metrics of the traditional Korean Medicine "정기신혈"(精氣神血), which are used as diagnostic tests. 
 
